@@ -224,7 +224,7 @@ function touchHandler(event) {
                 case "touchstart":  g_EventButtons = 1; break;
                 case "touchmove":   g_EventButtons = 1;  break;
                 case "touchcancel":
-                case "touchend":    g_EventButtons = 0; break;                
+                case "touchend":    g_EventButtons = 0; g_EventButtonUp = 1; break;                
             }
         }
         
@@ -386,7 +386,7 @@ function positionHandler(e)
                     } // end block
                     break;
 
-                case "end":    g_EventButtons = 0; break;                
+                case "end":    g_EventButtons = 0; g_EventButtonsUp = 1; break;                
             }
             //console.log( "x - " + eventX + ", y - " + eventY + " buttons - " + buttons);
         }

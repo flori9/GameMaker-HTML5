@@ -34,6 +34,7 @@ var g_ButtonButton = 0,
     g_EventMouseY = 0,    
     g_EventButtonDown = -1,
     g_EventButtonUp = 0,
+    g_EventButtonsUp = 0,
     g_EventLastButtonDown = -1,
     g_EventLastButtonUp = 0,
     g_LastKeyPressed = 0,
@@ -939,6 +940,7 @@ function onMouseUp(_evt) {
 	g_EventLastButtonUp = g_EventButtonUp;
 	g_EventButtonUp = g_ButtonButton;
 	g_EventButtons &= ~(1 << g_ButtonButton);
+	g_EventButtonsUp = 1;
 	g_EventButtonDown = -1;
 
 	// Clear the current input event for this button
@@ -1595,6 +1597,7 @@ function IO_Button_Clear_All() {
 	g_EventButtonUp = -1;
 	g_EventButtonDown = -1;
 	g_EventButtons = 0;
+	g_EventButtonsUp = 0;
 
 	g_CurrentInputEvents[0].Flags = 0;
 	g_CurrentInputEvents[0].x = 0;
@@ -1700,10 +1703,12 @@ function    IO_Update()
 	}
 	else {
         this.ButtonDown[0] = 0;        
-        if (((this.m_DoMouseButton_Last ^ this.m_DoMouseButton) & 0x1) != 0)
-        {
-        	this.ButtonReleased[0] = 1;
-		}
+	}
+
+	if (g_EventButtonsUp >= 1)
+	{
+		this.ButtonReleased[0] = 1;
+		g_EventButtonsUp = 0;
 	}
     	
 	// Right mouse button.
