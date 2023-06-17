@@ -43,7 +43,8 @@ var g_ButtonButton = 0,
 	g_MouseUP = 0,
 	g_MouseDOWN = 0,
 	g_BrowserInputCapture = false,
-	g_MouseWheel = 0;
+	g_MouseWheel = 0,
+	g_IgnoreMouseUpEventBecausePointerEventsAreSupportedAndOtherwiseWeWouldGetDoubleEvents = false;
 
 
 var g_KeyDown = [];
@@ -939,8 +940,9 @@ function onMouseUp(_evt) {
 
 	g_EventLastButtonUp = g_EventButtonUp;
 	g_EventButtonUp = g_ButtonButton;
+	if (g_EventButtons > 0 && !g_IgnoreMouseUpEventBecausePointerEventsAreSupportedAndOtherwiseWeWouldGetDoubleEvents)
+		g_EventButtonsUp = 1;
 	g_EventButtons &= ~(1 << g_ButtonButton);
-	g_EventButtonsUp = 1;
 	g_EventButtonDown = -1;
 
 	// Clear the current input event for this button
