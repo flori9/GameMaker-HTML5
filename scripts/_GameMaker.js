@@ -844,8 +844,9 @@ function animate() {
                     done = false;
                 }
                 ProcessFileLoading();
-                if(g_pGMFile.Options.loadingBarCallback)
+                if(g_pGMFile.Options.loadingBarCallback && g_pGMFile.Options.loadingBarCallback != "Use Default")
                 {
+                    console.log(eval(g_pGMFile.Options.loadingBarCallback) );
                     if (g_ExtensionTotal == g_ExtensionCount)
                     {
                         g_CustomLoadingBarCallback = eval(g_pGMFile.Options.loadingBarCallback);
