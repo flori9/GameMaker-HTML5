@@ -24,6 +24,7 @@ function yySkeletonInstance(_skeletonSprite) {
     this.m_drawCollisionData = false;
 	this.m_angle = 0;
 	this.m_rotationMatrix = new yyRotationMatrix(0);
+	this.m_reversedRotationMatrix = new yyRotationMatrix(0);
 
 	this.m_skeleton = null;
 	this.m_skeletonBounds = null;
@@ -698,6 +699,8 @@ yySkeletonInstance.prototype.SetAnimationTransform = function (_ind, _x, _y, _sc
 	var lastFrame = this.m_lastFrame;
 	var forceUpdate = this.m_forceUpdate;
 
+	var animationUpdated = false;
+
 	_scaley *= -1.0; /* Y scale seems to be inverted somewhere... */
 
     var    updateWorldTransform = (_eventInstance !== undefined);
@@ -767,8 +770,10 @@ yySkeletonInstance.prototype.SetAnimationTransform = function (_ind, _x, _y, _sc
 	    skeleton.scaleY = _scaley;
 	    this.m_angle = _angle;
 	    this.m_rotationMatrix = new yyRotationMatrix(-_angle);
+	    this.m_reversedRotationMatrix = new yyRotationMatrix(_angle);
 	    
 	    updateWorldTransform = true;
+		animationUpdated = true;
 
 	    this.m_forceUpdate = false;
 	}
@@ -783,6 +788,8 @@ yySkeletonInstance.prototype.SetAnimationTransform = function (_ind, _x, _y, _sc
 
 	    this.UpdateWorldTransformAndBounds();
     }
+
+	return animationUpdated;
 };
 
 yySkeletonInstance.prototype.UpdateWorldTransformAndBounds = function()
@@ -1250,7 +1257,7 @@ yySkeletonInstance.prototype.SetBoneData = function (_bone, _map) {
 ///          	Access the current bone state
 ///          </summary>
 // #############################################################################################
-yySkeletonInstance.prototype.GetBoneState = function (_bone, _map) {
+yySkeletonInstance.prototype.GetBoneState = function (_inst, _bone, _map) {
 
     var bone = this.m_skeleton.findBone(_bone);
 	if (bone) 
@@ -1258,19 +1265,25 @@ yySkeletonInstance.prototype.GetBoneState = function (_bone, _map) {
 		var pMap = g_ActiveMaps.Get(_map);
 		if (pMap) 
 		{
+			var angle = _inst.image_angle;
+
+			var origin = this.GetScreenOrigin();
+			var world_xy = [ bone.worldX, bone.worldY ];
+			world_xy = RotatePointAroundOrigin(world_xy, origin, this.m_rotationMatrix);
+
 		    pMap.set( "x", bone.x);
 			pMap.set( "y", bone.y);
 			pMap.set( "angle", bone.rotation);
 			pMap.set( "xscale", bone.scaleX);
 			pMap.set( "yscale", bone.scaleY);
-			pMap.set( "worldX", bone.worldX);
-			pMap.set( "worldY", bone.worldY);
+			pMap.set( "worldX", world_xy[0]);
+			pMap.set( "worldY", world_xy[1]);
 			//pMap["worldAngle"] = bone.worldRotation;
 			//pMap["worldScaleX"] = bone.worldScaleX;
 			//pMap["worldScaleY"] = bone.worldScaleY;
 		    //pMap["parent"] = bone.parent.data.name;
-			pMap.set( "worldAngleX", bone.getWorldRotationX());
-			pMap.set( "worldAngleY", bone.getWorldRotationY());
+			pMap.set( "worldAngleX", bone.getWorldRotationX() - angle);
+			pMap.set( "worldAngleY", bone.getWorldRotationY() - angle);
 			pMap.set( "worldScaleX", bone.getWorldScaleX());
 			pMap.set( "worldScaleY", bone.getWorldScaleY());
 			pMap.set( "appliedAngle", bone.arotation);
@@ -1288,7 +1301,7 @@ yySkeletonInstance.prototype.GetBoneState = function (_bone, _map) {
 ///          	Alter the current bone state
 ///          </summary>
 // #############################################################################################
-yySkeletonInstance.prototype.SetBoneState = function (_bone, _map) {
+yySkeletonInstance.prototype.SetBoneState = function (_inst, _bone, _map) {
 
     var bone = this.m_skeleton.findBone(_bone);
 	if (bone) 
@@ -1301,23 +1314,40 @@ yySkeletonInstance.prototype.SetBoneState = function (_bone, _map) {
 			if(pMap.get("xscale") !== undefined) bone.scaleX = pMap.get("xscale");
 			if(pMap.get("yscale") !== undefined) bone.scaleY = pMap.get("yscale");
 
-			var worldX = bone.worldX;
-			var worldY = bone.worldY;
-			if(pMap.get("worldX") !== undefined) worldX = pMap.get("worldX");
-			if(pMap.get("worldY") !== undefined) worldY = pMap.get("worldY");
+			/* The world co-ordinates stored within the spBone do not take the GM sprite rotation
+			 * into account, so we need to apply that rotation to those values when initialising
+			 * the defaults for worldX/worldY so they exist in the correct co-ordinate space and
+			 * reverse the rotation before comparing/applying back to the spBone.
+			 *
+			 * We can't just rotate and apply the user co-ords as worldX or worldY may be specified
+			 * individually and without the corresponding default co-ordinate from the spBone
+			 * rotated into the same co-ordinate space, the rotation of the user's co-ordinate
+			 * would not be correct.
+			 *
+			 * See GM-8031.
+			*/
+
+			var origin = this.GetScreenOrigin();
+			var world_xy = [ bone.worldX, bone.worldY ];
+			world_xy = RotatePointAroundOrigin(world_xy, origin, this.m_rotationMatrix);
+
+			if(pMap.get("worldX") !== undefined) world_xy[0] = pMap.get("worldX");
+			if(pMap.get("worldY") !== undefined) world_xy[1] = pMap.get("worldY");
+
+			world_xy = RotatePointAroundOrigin(world_xy, origin, this.m_reversedRotationMatrix);
 
 			// Since worldX/worldY and x/y modify the same fields on the bone, favour worldX/worldY if they've changed as this implies
 			// that they've been modified deliberately
-			if (!(Math.abs(worldX - bone.worldX) < 0.01) || !(Math.abs(worldY - bone.worldY) < 0.01))
+			if (!(Math.abs(world_xy[0] - bone.worldX) < 0.01) || !(Math.abs(world_xy[1] - bone.worldY) < 0.01))
 			{
 				var localPos;
 				if ((bone.parent !== undefined) && (bone.parent !== null))
 				{
-					localPos = bone.parent.worldToLocal({x:worldX, y:worldY});
+					localPos = bone.parent.worldToLocal({x:world_xy[0], y:world_xy[1]});
 				}
 				else
 				{
-					localPos = bone.worldToLocal({x:worldX, y:worldY});
+					localPos = bone.worldToLocal({x:world_xy[0], y:world_xy[1]});
 				}
 
 				bone.x = localPos.x;

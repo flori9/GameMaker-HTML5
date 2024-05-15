@@ -45,6 +45,9 @@ var g_ButtonButton = 0,
 	g_BrowserInputCapture = false,
 	g_MouseWheel = 0,
 	g_IgnoreMouseUpEventBecausePointerEventsAreSupportedAndOtherwiseWeWouldGetDoubleEvents = false;
+	g_MouseLocked = false,
+	g_MouseDeltaX = 0,
+	g_MouseDeltaY = 0;
 
 
 var g_KeyDown = [];
@@ -887,6 +890,18 @@ function onMouseMove(_evt) {
 
 	g_EventMouseX = _evt.clientX;
 	g_EventMouseY = _evt.clientY;
+	
+	g_MouseDeltaX = _evt.movementX
+		|| _evt.mozMovementX
+		|| _evt.webkitMovementX
+		|| _evt.msMovementX
+		|| 0;
+
+	g_MouseDeltaY = _evt.movementY
+		|| _evt.mozMovementY
+		|| _evt.webkitMovementY
+		|| _evt.msMovementY
+		|| 0;
 
 	// Keep the current input events updated        		
 	g_CurrentInputEvents[_evt.button].x = g_EventMouseX;
@@ -1072,6 +1087,14 @@ function    yyIOManager( )
 
 }
 
+function onMouseLockChange()
+{
+	g_MouseLocked = (document.pointerLockElement === canvas
+		|| document.mozPointerLockElement === canvas
+		|| document.webkitPointerLockElement === canvas
+		|| document.msPointerLockElement === canvas);
+}
+
 function browser_input_capture( _enable )
 {
     _enable = yyGetBool(_enable);
@@ -1103,6 +1126,11 @@ function browser_input_capture( _enable )
         window.addEventListener("focus", yySetINFocus);
         window.addEventListener("blur", yySetOUTFocus);
 
+		document.onpointerlockchange = onMouseLockChange;
+		document.onmozpointerlockchange = onMouseLockChange;
+		document.onwebkitpointerlockchange = onMouseLockChange;
+		document.onmspointerlockchange = onMouseLockChange;
+		
         // IE, Chrome, FireFox and Safari
       
         CaptureBrowserInput();
@@ -1135,6 +1163,11 @@ function browser_input_capture( _enable )
         window.onfocus = null;
         window.onblur = null;
 
+		document.onpointerlockchange = null;
+		document.onmozpointerlockchange = null;
+		document.onwebkitpointerlockchange = null;
+		document.onmspointerlockchange = null;
+		
         // IE, Chrome, FireFox and Safari
        
         ReleaseBrowserInput();

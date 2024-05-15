@@ -1323,11 +1323,14 @@ function yyCommandBuilder(_interpolatePixels) {
                 case CMD_CLEARSCREEN:
                     {
                         var depthMask = gl.getParameter(gl.DEPTH_WRITEMASK);
+                        var colorMask = gl.getParameter(gl.COLOR_WRITEMASK);
                         gl.depthMask(true);
+                        gl.colorMask(true, true, true, true);
                         col = m_commandList[i + 2];
                         gl.clearColor((col & 0xff) / 255.0, ((col >> 8) & 0xff) / 255.0, ((col >> 16) & 0xff) / 255.0, ((col >>24) & 0xff) / 255.0);
                         gl.clear(m_commandList[i + 1]);
                         gl.depthMask(depthMask);
+                        gl.colorMask(colorMask[0], colorMask[1], colorMask[2], colorMask[3]);
                         i += 3;
                         break;
                     }
@@ -1491,6 +1494,11 @@ function yyCommandBuilder(_interpolatePixels) {
 	                	    case gl.INT_VEC2: gl.uniform2iv(uniformData.location, shaderData); break;
 	                	    case gl.INT_VEC3: gl.uniform3iv(uniformData.location, shaderData); break;
 	                	    case gl.INT_VEC4: gl.uniform4iv(uniformData.location, shaderData); break;
+
+                            case gl.BOOL: gl.uniform1iv(uniformData.location, shaderData); break;
+	                	    case gl.BOOL_VEC2: gl.uniform2iv(uniformData.location, shaderData); break;
+	                	    case gl.BOOL_VEC3: gl.uniform3iv(uniformData.location, shaderData); break;
+	                	    case gl.BOOL_VEC4: gl.uniform4iv(uniformData.location, shaderData); break;
 	                    } 	                    
 	                    break;
 	                }            

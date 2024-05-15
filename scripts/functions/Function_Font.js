@@ -635,6 +635,20 @@ function font_get_sdf_spread(id)
 	return 0;
 }
 
+function font_enable_effects(id,enable,params)
+{
+	if (g_webGL)
+	{
+		id = yyGetInt32(id);
+		if(g_pFontManager.Fonts[id]!=undefined)
+		{
+			var font = g_pFontManager.Fonts[id];
+			font.effect_params.enabled = yyGetBool(enable);
+
+			font.SetEffectParams(params);			
+		}		
+	}	
+}
 
 // #############################################################################################
 /// Function:<summary>
@@ -848,12 +862,18 @@ function font_get_info( _ind )
 	variable_struct_set(ret, "ascenderOffset", pFont.ascenderOffset); //ret.gmlascenderOffset = pFont.ascenderOffset;
 	variable_struct_set(ret, "ascender", pFont.ascender); //ret.gmlascender = pFont.ascender;
 	variable_struct_set(ret, "sdfSpread", pFont.sdfSpread); //ret.gmlsdfSpread = pFont.sdfSpread;
+	variable_struct_set(ret, "sdfEnabled", pFont.sdf); 	
+	variable_struct_set(ret, "freetype", false); // we don't support freetype fonts on HTML5 but adding this so it has the same fields as the C++ runner	
     variable_struct_set(ret, "size", pFont.size); //ret.gmlsize = pFont.size;
     variable_struct_set(ret, "spriteIndex", pFont.spriteIndex); //ret.gmlspriteIndex = pFont.spriteIndex;
     variable_struct_set(ret, "texture", pTPE != null ? pTPE.tp : -1); //ret.gmltexture = pTPE != null ? pTPE.tp : -1;
     variable_struct_set(ret, "name", pFont.pName); //ret.gmlname = pFont.pName;
     variable_struct_set(ret, "bold", pFont.bold); //ret.gmlbold = pFont.bold;
-    variable_struct_set(ret, "italic", pFont.italic); //ret.gmlitalic = pFont.italic;
+    variable_struct_set(ret, "italic", pFont.italic); //ret.gmlitalic = pFont.italic;	
+
+	variable_struct_set(ret, "effectsEnabled", pFont.effect_params.enabled);
+	variable_struct_set(ret, "effectParams", pFont.GetEffectParams());
+
     variable_struct_set(ret, "glyphs", new GMLObject()); //ret.gmlglyphs = new GMLObject();
     var glyphs = variable_struct_get(ret, "glyphs");
 
